@@ -1,5 +1,8 @@
 package com.example.usercenter.service;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 
 import com.example.usercenter.model.User;
@@ -72,6 +75,45 @@ public class UserServiceTests {
         checkPassword="12345678";
         result = userService.userRegister(userAccount,userPassword,checkPassword);
         Assertions.assertTrue(result>0);
+    }
+    @Test
+    void SerachUserByTagsTest(){
+        List<String> taglist=new ArrayList<>();
+        taglist.add("java");
+        taglist.add("python");
+        long start = System.currentTimeMillis();
+        List<User> users=userService.SearchUsersByTag(taglist);
+        long end = System.currentTimeMillis();
+        System.out.println("No-SQL="+(end-start));
+        System.out.println(users.size());
+//        return end-start;
+    }
+    @Test
+    void SerachUserByTagsSQLTest(){
+        List<String> taglist=new ArrayList<>();
+        taglist.add("java");
+        taglist.add("python");
+        long start = System.currentTimeMillis();
+        List<User> users=userService.SearchUsersByTagSQL(taglist);
+        long end = System.currentTimeMillis();
+        System.out.println("SQL="+(end-start));
+        System.out.println(users.size());
+//        return end-start;
+    }
+    @Test
+    void TestInterface(){
+//        long sum1=0;
+//        long sum2=0;
+//        for(Integer i=0;i<10;i++){
+        //先进行一次，测试一连接数据库，避免连接数据库时间的干扰
+        SerachUserByTagsTest();
 
+
+        SerachUserByTagsTest();
+        SerachUserByTagsSQLTest();
+//        }
+//        System.out.println("‘sum1/10+","+sum2);
+//        User user=new User();
+//        user.setUsername("dogyupi");
     }
 }

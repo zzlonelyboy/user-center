@@ -4,6 +4,7 @@ import com.example.usercenter.model.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author zz
@@ -20,4 +21,12 @@ public interface UserService extends IService<User> {
 
     boolean checkRole(HttpServletRequest request);
     void userLogout(HttpServletRequest request);
+
+    List<User> SearchUsersByTagSQL(List<String> taglist);
+
+    List<User> SearchUsersByTag(List<String> taglist);
+
+    Boolean updateUser(User user, User loginUser);
+    User getCurrentUser(HttpServletRequest request);
+    Boolean isAdmin(User user);
 }

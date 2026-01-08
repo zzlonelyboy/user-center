@@ -7,15 +7,18 @@ import com.example.usercenter.exception.BussinessException;
 import com.example.usercenter.model.User;
 import com.example.usercenter.service.UserService;
 import com.example.usercenter.mapper.UserMapper;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.example.usercenter.constant.UserConstant.ADMIN_ROLE;
 import static com.example.usercenter.constant.UserConstant.USER_LOGIN_STATE;
@@ -180,6 +183,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         cleanUser.setUserRole(user.getUserRole());
         cleanUser.setUserStatus(user.getUserStatus());
         cleanUser.setCreateTime(user.getCreateTime());
+        cleanUser.setUserProfile(user.getUserProfile());
+        cleanUser.setTags(user.getTags());
         return cleanUser;
     }
     @Override
@@ -194,6 +199,71 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public void userLogout(HttpServletRequest request) {
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return;
+    }
+    @Override
+    @Deprecated
+    public List<User> SearchUsersByTagSQL(List<String> taglist){
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        for (String tag:taglist){
+            queryWrapper=queryWrapper.like("tags",tag);
+        }
+        return this.list(queryWrapper).stream().map(this::getSafetyUser).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<User> SearchUsersByTag(List<String> taglist) {
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        List<User> userlist=this.list(queryWrapper);
+        Gson gson = new Gson();
+        return userlist.stream().filter(user->{
+            String tagStr=user.getTags();
+//            if(StringUtils.isBlank(tagStr)){
+//                return false;
+//            }
+//            Set<String> tagSet = gson.fromJson(tagStr,new TypeToken<Set<String>>(){}.getType());
+            //等价为
+            Set<String> tagSet = gson.fromJson(tagStr,new TypeToken<Set<String>>(){}.getType());
+            tagSet= Optional.ofNullable(tagSet).orElse(new HashSet<>());
+            for(String tag :taglist){
+                if(!tagSet.contains(tag)){
+                    return false;
+                }
+            }
+            return true;
+        }).map(this::getSafetyUser).collect(Collectors.toList());
+    }
+
+    @Override
+    public Boolean updateUser(User user, User loginUser) {
+        if(user.getId().longValue()!=loginUser.getId().longValue()&&!this.isAdmin(loginUser)){
+            throw new BussinessException(ErrorCode.NO_AUTH);
+        }
+        //如果是自己修改自己不用校验，但是如果是管理员修改，需要保证修改的用户是存在的
+        User oldUser=this.getById(user.getId());
+        if(oldUser==null){
+            throw new BussinessException(ErrorCode.NULL_ERROR);
+        }
+        return this.updateById(user);
+    }
+
+    @Override
+    public User getCurrentUser(HttpServletRequest request) {
+        User loginUser=(User)request.getSession().getAttribute(USER_LOGIN_STATE);
+        if(loginUser==null){
+            throw new BussinessException(ErrorCode.NO_LOGIN);
+        }
+        return loginUser;
+    }
+    @Override
+    public Boolean isAdmin(User user){
+        if(user==null){
+            throw new BussinessException(ErrorCode.NULL_ERROR);
+        }
+        if(user.getUserRole()!=ADMIN_ROLE){
+            return false;
+        }
+        return true;
     }
 }
 

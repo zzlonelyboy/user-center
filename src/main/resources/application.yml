@@ -6,6 +6,16 @@ spring:
     password: 1234
     url: jdbc:mysql://localhost:3306/usercenter
     driver-class-name: com.mysql.cj.jdbc.Driver
+  mvc:
+    pathmatch:
+        matching-strategy: ant_path_matcher # 解决路径匹配问题
+  redis:
+    host: localhost
+    port: 6379
+    database: 1
+  session:
+    store-type: redis
+    timeout: 86400
 server:
   port: 8080
   servlet:
@@ -16,3 +26,18 @@ mybatis-plus:
       logic-delete-field: is_delete # 全局逻辑删除字段名(deleted为实体类属性名称)
       logic-delete-value: 1 # 逻辑已删除值。可选，默认值为 1
       logic-not-delete-value: 0 # 逻辑未删除值。可选，默认值为 0
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+knife4j:
+  enable: true
+  openapi:
+    title: 用户中心接口文档
+    version: 1.0.0
+    description: 接口文档描述
+    contact:
+      name: zz
+      email: zzwysc@bupt.edu.cn
+  # 配置接口扫描路径（默认扫描所有 @RestController 注解的类）
+  scan:
+    base-package: com.example.usercenter.controller # 替换为你的 Controller 包路径

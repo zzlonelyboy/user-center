@@ -2,6 +2,7 @@ package com.example.usercenter.model;
 
 import com.baomidou.mybatisplus.annotation.*;
 
+import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
 
@@ -11,7 +12,9 @@ import lombok.Data;
  */
 @TableName(value ="user")
 @Data
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 5180878840154365753L;
     /**
      * ID
      */
@@ -79,6 +82,9 @@ public class User {
      */
     private Integer userRole;
 
+    private String userProfile;
+
+    private String tags;
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -103,7 +109,8 @@ public class User {
             && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
             && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()))
             && (this.getIsDelete() == null ? other.getIsDelete() == null : this.getIsDelete().equals(other.getIsDelete()))
-            && (this.getUserRole() == null ? other.getUserRole() == null : this.getUserRole().equals(other.getUserRole()));
+            && (this.getUserRole() == null ? other.getUserRole() == null : this.getUserRole().equals(other.getUserRole()))
+            &&(this.getUserProfile()==null? other.getUserProfile()==null : this.getUserProfile().equals(other.getUserProfile()));
     }
 
     @Override
@@ -123,6 +130,7 @@ public class User {
         result = prime * result + ((getUpdateTime() == null) ? 0 : getUpdateTime().hashCode());
         result = prime * result + ((getIsDelete() == null) ? 0 : getIsDelete().hashCode());
         result = prime * result + ((getUserRole() == null) ? 0 : getUserRole().hashCode());
+        result = prime * result + ((getUserProfile() == null) ? 0 : getUserProfile().hashCode());
         return result;
     }
 
@@ -145,6 +153,7 @@ public class User {
         sb.append(", updateTime=").append(updateTime);
         sb.append(", isDelete=").append(isDelete);
         sb.append(", userRole=").append(userRole);
+        sb.append(", userProfile=").append(userProfile);
         sb.append("]");
         return sb.toString();
     }
