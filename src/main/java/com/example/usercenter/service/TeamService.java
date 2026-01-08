@@ -1,7 +1,8 @@
 package com.example.usercenter.service;
 
-import com.example.usercenter.model.Team;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.usercenter.model.Team;
+import com.example.usercenter.model.User;
 
 /**
 * @author zz
@@ -9,5 +10,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 * @createDate 2026-01-08 16:35:00
 */
 public interface TeamService extends IService<Team> {
-
+    public Long addTeam(Team team, User loginUser);
 }

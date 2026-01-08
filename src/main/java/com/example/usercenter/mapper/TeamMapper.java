@@ -1,7 +1,7 @@
 package com.example.usercenter.mapper;
 
-import com.example.usercenter.model.Team;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.usercenter.model.Team;
 
 /**
 * @author zz
