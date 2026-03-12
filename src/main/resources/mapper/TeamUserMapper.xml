@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.usercenter.mapper.TeamUserMapper">
+    <select id="SelctUserFromId" resultType="long">
+        select userid from team_user where teamid=#{teamid} and is_delete=0;
+    </select>
+    <select id="SelectUserListDesc" resultType="com.example.usercenter.model.TeamUser">
+        select * from team_user where teamid=#{teamid} and is_delete=0 order by create_time limit 2;
+    </select>
+    <resultMap id="BaseResultMap" type="com.example.usercenter.model.TeamUser">
+            <id property="id" column="id" />
+            <result property="userid" column="userid" />
+            <result property="teamid" column="teamid" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+            <result property="isDelete" column="is_delete" />
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,userid,teamid,create_time,update_time,is_delete
+    </sql>
+</mapper>
