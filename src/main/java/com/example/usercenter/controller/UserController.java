@@ -137,7 +137,6 @@ public class UserController {
         Boolean result=userService.updateUser(user,loginUser);
         return BaseResponseUtils.success(result);
     }
-    @GetMapping("/recommendUser")
     //todo:此处的缓存对于仅对于用户而言存在，但是对于页数和分页不存在，此处的缓存需要与之适配，否则会出现每一页都返回第一页的情况
     //todo:是该完整查询，缓存完整表，还是缓存前几十页
     //todo:此处缓存还缓存了密码等不必要数据
@@ -149,11 +148,12 @@ public class UserController {
         }
         User loginUser=(User)userObject;
         Long userID=loginUser.getId();
+//        List<User> userList = userService.recommend(page,pageSize,userID);
         String searchFormat=String.format("yupao:user:recommend:%s",userID);
         IPage<User> userPage= (IPage<User>) redisTemplate.opsForValue().get(searchFormat);
         if(userPage==null){
             QueryWrapper queryWrapper = new QueryWrapper<>();
-    //        List<User> userList=userService.list(queryWrapper);
+//            List<User> userList=userService.list(queryWrapper);
             IPage<User> pager=new Page<>(page,pageSize);
             userPage=userService.page(pager,queryWrapper);
             redisTemplate.opsForValue().set(searchFormat,userPage,30, TimeUnit.MINUTES);
@@ -162,4 +162,12 @@ public class UserController {
         userList.stream().map(user->userService.getSafetyUser(user)).collect(Collectors.toList());
         return BaseResponseUtils.success(userList);
     }
+    @GetMapping("/recommendUser")
+    public BaseResponse matchUser(@RequestParam Integer page,Integer pageSize,HttpServletRequest request){
+        User user=this.userService.getCurrentUser(request);
+        if(user==null){
+            throw new BussinessException(ErrorCode.NO_LOGIN);
+        }
+        return BaseResponseUtils.success(userService.matchUser(user,page,pageSize));
+     }
 }

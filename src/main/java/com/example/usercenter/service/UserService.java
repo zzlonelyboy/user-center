@@ -21,7 +21,7 @@ public interface UserService extends IService<User> {
 
     boolean checkRole(HttpServletRequest request);
     void userLogout(HttpServletRequest request);
-
+    List<User> recommend(Integer page, Integer pageSize,Integer userID);
     List<User> SearchUsersByTagSQL(List<String> taglist);
 
     List<User> SearchUsersByTag(List<String> taglist);
@@ -29,4 +29,6 @@ public interface UserService extends IService<User> {
     Boolean updateUser(User user, User loginUser);
     User getCurrentUser(HttpServletRequest request);
     Boolean isAdmin(User user);
+
+    List<User> matchUser(User user, Integer pageSize,Integer page);
 }

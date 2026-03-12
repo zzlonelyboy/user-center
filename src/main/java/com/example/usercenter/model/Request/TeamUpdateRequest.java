@@ -1,5 +1,6 @@
 package com.example.usercenter.model.Request;
 
+import com.example.usercenter.model.User;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,6 +14,7 @@ public class TeamUpdateRequest implements Serializable {
     private String teamName;
     private String description;
     private Date expireTime;
+    private Integer maxNum;
     private String tags;
     private Integer status;
     private String password;

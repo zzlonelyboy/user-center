@@ -21,12 +21,12 @@ public class UserInsertTest {
     public void insertUserInfo() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        int INSERT_NUM=100000;
+        int INSERT_NUM=500000;
         List<User> userList=new ArrayList<User>();
         for (int i =0;i<INSERT_NUM;i++) {
             User user = new User();
-            user.setUsername("假沙鱼");
-            user.setUserAccount("yusha");
+            user.setUsername("假沙鱼"+i);
+            user.setUserAccount("yusha"+i);
             user.setAvatarUrl("shanghai.myqcloud.com/shayu931/shayu.png");
             user.setUserProfile("一条咸鱼");
             user.setGender(0);

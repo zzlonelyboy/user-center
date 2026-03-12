@@ -189,6 +189,9 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         /**
          * 模糊搜索队名和描述
          */
+        if(teamQuery.getId()!=null){
+            teamQueryWrapper.eq("id", teamQuery.getId());
+        }
         if(StringUtils.isNotBlank(teamQuery.getSearchText())){
             teamQueryWrapper.and(teamQueryWrapper1 ->  teamQueryWrapper1.like("team_name",teamQuery.getSearchText()).or().like("description",teamQuery.getSearchText()));
         }
@@ -223,12 +226,15 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
          */
         Integer userStatus = teamQuery.getStatus();
         TeamStatusEnum teamStatusEnum=TeamStatusEnum.getEnumByValue(userStatus);
-        if(!TeamStatusEnum.PUBLIC.equals(teamStatusEnum)&&!isAdmin)
+        if(userStatus!=null&&!TeamStatusEnum.PUBLIC.equals(teamStatusEnum)&&!isAdmin)
         {
             throw new BussinessException(ErrorCode.NO_AUTH,"没有权限");
         }
         if(userStatus!=null){
              teamQueryWrapper.eq("status",userStatus);
+        }
+        if(userStatus==null&&!isAdmin){
+            teamQueryWrapper.ne("status",1);
         }
         Page<Team> pager=new Page<>(teamQuery.getPage(),teamQuery.getPageSize());
         List<Team> teamList = this.page(pager,teamQueryWrapper).getRecords();
@@ -352,7 +358,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // 更新的最大大小如果比当前队伍中的人数小，报错
         QueryWrapper<TeamUser> teamQueryWrapper = new QueryWrapper<>();
         teamQueryWrapper.eq("teamid",team.getId());
-        long counts=teamUserService.count();
+        long counts=teamUserService.count(teamQueryWrapper);
         if(team.getMaxNum()!=null&&counts>team.getMaxNum()){
             throw new BussinessException(ErrorCode.PARAM_ERROR);
         }
@@ -390,7 +396,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean joinTeam(Team team, User loginUser) {
-        //todo:一个用户最多加入5个队伍
+        //todo:一个用户最多加入5个队伍 (线程安全)
         //todo:私密队伍的加入需要校验（暂时只允许加入公开/加密队伍）
         //todo:不能加入已经过期的队伍
         if(loginUser==null){
@@ -475,6 +481,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             teamUserQueryWrapper.clear();
             teamUserQueryWrapper.eq("teamid",team.getId());
             //如果当前用户是队长
+            //只用取两条
             List<TeamUser> teamUserList= teamUserMapper.SelectUserListDesc(team.getId());
             if(teamUserList.size()<2){
                 //当前没有第二个用户，直接删除（解散）队伍

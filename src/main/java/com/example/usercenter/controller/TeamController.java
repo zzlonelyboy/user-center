@@ -146,7 +146,7 @@ public class TeamController {
             throw new BussinessException(ErrorCode.NO_LOGIN);
         }
         Team team=new Team();
-        team.setId(withDrawRequest.getTeamid());
+        team.setId(withDrawRequest.getTeamId());
         Boolean result=teamService.withDrawTeam(team,user);
         return BaseResponseUtils.success(result);
     }

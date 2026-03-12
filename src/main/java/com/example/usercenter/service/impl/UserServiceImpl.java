@@ -7,15 +7,22 @@ import com.example.usercenter.exception.BussinessException;
 import com.example.usercenter.model.User;
 import com.example.usercenter.service.UserService;
 import com.example.usercenter.mapper.UserMapper;
+import com.example.usercenter.utils.AlgorithmUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,6 +46,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //    public UserServiceImpl(UserService userService) {
 //        this.userService = userService;
 //    }
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+//    @Autowired
+//    private UserService userService;
+
     /**
      * 如果传输的不是一个很多的数据的话，不用直接传对象
      *
@@ -200,6 +212,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return;
     }
+
+    //todo:当前只考虑了推荐，没有考虑分页
+    @Override
+    public List<User> recommend(Integer page, Integer pageSize, Integer userID) {
+         String searchFormat=String.format("yupao:user:recommend:%s",userID);
+         User currentUser = this.getById(userID);
+         String currentTagsString = currentUser.getTags();
+         Gson gson = new Gson();
+         List<String> currentTags = gson.fromJson(currentTagsString, new TypeToken<List<String>>(){}.getType());
+         QueryWrapper<User> initalQueryWrapper = new QueryWrapper<>();
+         initalQueryWrapper.isNotNull("tags");
+         initalQueryWrapper.select("id","tags");
+
+         List<User> allUserList= (List<User>) redisTemplate.opsForValue().get(searchFormat);
+         List<Pair<User,Long>> list = new ArrayList<>();
+         if(allUserList==null){
+             QueryWrapper queryWrapper = new QueryWrapper<>();
+             allUserList = this.list(initalQueryWrapper);
+             redisTemplate.opsForValue().set(searchFormat,allUserList,30, TimeUnit.MINUTES);
+         }
+
+        for(int i =0 ;i<allUserList.size();i++){
+            User user = allUserList.get(i);
+            String userTags = user.getTags();
+            //无标签的 或当前用户为自己
+            if (StringUtils.isBlank(userTags) || user.getId() == userID.longValue()){
+                continue;
+            }
+            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
+            }.getType());
+            //计算分数
+            long distance = AlgorithmUtils.minDistance(currentTags, userTagList);
+            list.add(Pair.of(user,distance));
+        }
+
+//         userList.stream().map(user->this.getSafetyUser(user)).collect(Collectors.toList());
+
+
+        return Collections.emptyList();
+    }
+
     @Override
     @Deprecated
     public List<User> SearchUsersByTagSQL(List<String> taglist){
@@ -264,6 +317,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return false;
         }
         return true;
+    }
+
+    @Override
+    public List<User> matchUser(User user, Integer page,Integer pageSize){
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        //最暴力的思路：查询所有用户，与当前用户比较相似度
+        //优化1：不查询tags为空的用户
+        queryWrapper.isNotNull("tags");
+        queryWrapper.select("id","tags");
+        queryWrapper.last("limit 51000");
+        List<User> allUsers= this.list(queryWrapper);
+        //此处indexDistanceMap默认用key升序，这里需要用value升序
+//        SortedMap<Long, Integer> indexDistanceMap = new TreeMap<>();
+        List<Pair<User,Integer>> indexList = new ArrayList<>();
+        Gson gson = new Gson();
+        List<String>tags = gson.fromJson(user.getTags(), new TypeToken<List<String>>() {}.getType());
+        for(int i = 0 ; i < allUsers.size(); i++){
+            User tempUser = allUsers.get(i);
+            if(tempUser.getId().equals(user.getId())){
+                continue;
+            }
+            List<String> tempTags = gson.fromJson(tempUser.getTags(), new TypeToken<List<String>>() {}.getType());
+            int score= AlgorithmUtils.minDistance(tags, tempTags);
+            indexList.add(Pair.of(tempUser,score));
+//            indexDistanceMap.put(tempUser.getId(),score);
+        }
+//        indexDistanceMap.entrySet()
+
+        List<Pair<User, Integer>> topUserPairList = indexList.stream()
+        .sorted((a, b) -> (int) (a.getSecond()-b.getSecond()))
+        .skip((long)(page-1)*pageSize)
+        .limit(pageSize)
+        .collect(Collectors.toList());
+        List<User> userListVo=new ArrayList<>();
+        int i =0;
+        for(Pair<User,Integer> pair:topUserPairList){
+            if(i>=pageSize){
+                break;
+            }
+            User tempUser = this.getSafetyUser(this.getById(topUserPairList.get(i).getFirst().getId()));
+            userListVo.add(tempUser);
+            i++;
+        }
+        return userListVo;
     }
 }
 
